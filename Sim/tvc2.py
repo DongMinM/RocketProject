@@ -8,9 +8,9 @@ class Tvc:
         self.set_angle = np.array([set_angle[0],set_angle[1],set_angle[2]])
         self.w = np.array([now_param[13],now_param[14],now_param[15]])
         self.w_dot = np.array([w_dot[0],w_dot[1],w_dot[2]])
-        self.p = 0.5
-        self.i = 0.3
-        self.d = 0.1
+        self.p = 1.5                      ## 1~      관성 조절
+        self.i = 1.3                    ## 1.3      tvc 속도 조절
+        self.d = 0.6                    ## 0.6      각에따른 민감도
         self.gap_angle = np.array([0,0,0])
 
     def run(self):
