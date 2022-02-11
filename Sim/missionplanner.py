@@ -1,22 +1,31 @@
 from datahub import DataHub
 import rospy
+from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import String
+
 
 class MissionPlanner:
     def __init__(self):
-        
-        self.datahub = DataHub()
-        # vx, vy, vz, px, py, pz, m, psi, theta, phi, alpha, beta, gamma, wx, wy, wz
+        rospy.init_node('MissionPlanner')
+        self.pub = rospy.Publisher('MissionCode',Float32MultiArray,queue_size=1)
+        self.data = []
+        # self.datahub.data : vx, vy, vz, px, py, pz, m, psi, theta, phi, alpha, beta, gamma, wx, wy, wz
 
 
     def run(self):
-        self.datahub.run()
+        rospy.Subscriber('data',Float32MultiArray, self.callback)
         while True:
-            if len(self.datahub.data) > 0:
-                print(self.datahub.data[5])
+            if len(self.data) > 0:
+                print(self.data[5])
+                data = Float32MultiArray()
+                data.data = self.data
+                self.pub.publish(data)
             else:
                 print('No data')
+            rospy.sleep(0.01)
 
-            rospy.sleep(0.1)
+    def callback(self,msg):
+        self.data = msg.data
 
 
 if __name__ == '__main__':

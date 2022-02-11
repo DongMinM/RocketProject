@@ -6,7 +6,6 @@ class DataHub:
 
 
     def __init__ (self):
-        rospy.init_node('datahub')
         self.data = []
         self.code = 0
         # vx, vy, vz, px, py, pz, m, psi, theta, phi, alpha, beta, gamma, wx, wy, wz
