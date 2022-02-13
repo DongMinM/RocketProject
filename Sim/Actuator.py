@@ -9,12 +9,12 @@ class Actuator:
     def __init__(self):
         #vx, vy, vz, px, py, pz, m, psi, theta, phi, alpha, beta, gamma, wx, wy, wz
         self.angle = np.array([0,0,0])       
-        self.set_angle = np.array([0,0,0])
+        self.set_angle = np.array([0,0,40])
         self.w = np.array([0,0,0])
         self.w_dot = np.array([0,0,0])
-        self.d = 2.8                     ## 2.8    4      내려갔을 경우 회복(그래프 오른쪽으로 이동)
-        self.i = 7.7                    ## 7.7     5     내려가는 속도의 반대 - 속도 조절
-        self.p = 5.2                    ## 5.2     2     내려가는 속도- 각도에 대한 민감도
+        self.d = 0.8                  ## 2.8    4      내려갔을 경우 회복(그래프 오른쪽으로 이동)
+        self.i = 12.7                    ## 7.7     5     내려가는 속도의 반대 - 속도 조절
+        self.p = 20                    ## 5.2     2     내려가는 속도- 각도에 대한 민감도
         self.gap_angle = np.array([0,0,0])
 
         rospy.init_node('Actuator')
