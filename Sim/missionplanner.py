@@ -16,13 +16,13 @@ class MissionPlanner:
         rospy.Subscriber('data',Float32MultiArray, self.callback)
         while True:
             if len(self.data) > 0:
-                print(self.data[5])
+                # print(self.data[5])
                 data = Float32MultiArray()
                 data.data = self.data
                 self.pub.publish(data)
             else:
                 print('No data')
-            rospy.sleep(0.01)
+            rospy.sleep(0.3)
 
     def callback(self,msg):
         self.data = msg.data

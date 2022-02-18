@@ -26,6 +26,7 @@ class Rocket_system:
         motor_angle ,
         rocket_length ,
         mass_center,
+        aerocenter,
         diameter,
         trust
     ):
@@ -42,37 +43,44 @@ class Rocket_system:
         self.mass_center = mass_center
         self.diameter = diameter
         self.T = trust
+        self.totla_aero_center = aerocenter
 
         self.mass = mass_pro+mass_struct                                ## total mass
         self.total_mass_center = 0                                      ## set space of total mass center
-        self.totla_aero_center = 0                                      ## set space of total aero center
         self.angle_dot = [0,0,0]                                        ## initiate angle_dot
-        self.zeroparam = np.hstack((self.velocity, self.position, self.mass, self.rocket_angle,self.motor_angle,self.angular_velocity))
+        self.zeroparam = np.hstack((self.velocity, self.position, self.mass, self.rocket_angle,self.angular_velocity))
         ## set zeroparam space
         self.force_effect = []                                          ## set space of force effect
         
         self.w_dot = np.array([0,0,0])                                  ## set space of w_dot
         self.accel = np.empty((0,3))                                    ## set space of accel
+        self.need_motor_angle = np.array([0,0,0])
 
 
     ## in burnning
-    def force_burn(self,zeroparam,t):
-        # T = [0,0,500/self.t_b*math.sin(math.pi/self.t_b*realTime)]      ## set trust function
+    def force_burn(self,zeroparam,t,alpha,beta,gamma):
+        # print(realTime)
+        # print('angle dot : ', self.angle_dot)
+        # T = [0,0,200]      ## set trust function
+        # print(T)
         T = self.T
-        vx, vy, vz, px, py, pz, m, psi, theta, phi,alpha,beta,gamma, wx, wy, wz = zeroparam
+        vx, vy, vz, px, py, pz, m, psi, theta, phi,wx, wy, wz = zeroparam
+        # self.motor_angle = np.array([alpha,beta,gamma])
+        # print(alpha,beta,gamma)
         self.total_mass_center = (self.mass_center[0]*self.mass_struct+self.mass_center[1]*(m-self.mass_struct))/m
-        
+        # print(self.total_mass_center)
+        # print(alpha,beta,gamma)
         # Set Tvc angle limit (')
-        if beta > 5:
-            beta = 5
-        elif beta < -5 :
-            beta = -5
+        # if beta > 3:
+        #     beta = 3
+        # elif beta < -3 :
+        #     beta = -3
 
-        if gamma > 5 :
-            gamma = 5
-        elif gamma < -5:
-            gamma = -5
-        
+        # if gamma > 3 :
+        #     gamma = 3
+        # elif gamma < -3:
+        #     gamma = -3
+        # print(alpha,beta,gamma)
         M1 = Transformer().body_to_earth([psi, theta, phi])                             ## transform metrix rocket -> ground
         con_vec = Transformer().body_to_earth(np.array([alpha, beta, gamma]))           ## transform metrix motor -> rocket
 
@@ -82,7 +90,7 @@ class Rocket_system:
         r_to_bottom = -self.total_mass_center*M1@[0,0,1]                                ## vector from mass center to bottom                
 
         torque = np.cross(r_to_bottom,T)                                                ## calcul torque by trust
-        torque = np.round(torque,10)
+        # torque = np.round(torque,10)
 
 
 
@@ -108,16 +116,17 @@ class Rocket_system:
             vz_dot =0
 
         px_dot, py_dot, pz_dot = v                                          ## differential equation of position of rocket
-        alpha_dot,beta_dot,gamma_dot = self.angle_dot                       ## differential equation of motor angul (TVC)
         self.w_dot = np.array([wx_dot,wy_dot,wz_dot])                       ## save rocket w_dot
         self.accel = np.array([vx_dot,vy_dot,vz_dot])                       ## save rocket acceleration
+        
+        # print(psi,theta,phi)
 
-        return np.array([vx_dot, vy_dot, vz_dot, px_dot, py_dot, pz_dot, m_dot,psi_dot, theta_dot, phi_dot,alpha_dot,beta_dot, gamma_dot, wx_dot, wy_dot, wz_dot])
+        return np.array([vx_dot, vy_dot, vz_dot, px_dot, py_dot, pz_dot, m_dot,psi_dot, theta_dot, phi_dot, wx_dot, wy_dot, wz_dot])
 
         
     ## free fall
     def force_free(self,zeroparam,t):
-        vx, vy, vz, px, py, pz, m, psi, theta, phi, alpha, beta, gamma, wx, wy, wz= zeroparam
+        vx, vy, vz, px, py, pz, m, psi, theta, phi,wx, wy, wz= zeroparam
         v = np.array([vx,  vy,  vz])
         p = np.array([px,  py,  pz])
         g = np.array([ 0,   0, 9.8])
@@ -140,14 +149,14 @@ class Rocket_system:
         m_dot = 0
         vx_dot, vy_dot, vz_dot = D/m -g
         px_dot, py_dot, pz_dot = v
-        alpha_dot, beta_dot, gamma_dot = [0,0,0]
         self.w_dot = np.array([wx_dot,wy_dot,wz_dot])
         self.accel = np.array([vx_dot,vy_dot,vz_dot])
+        # print(psi,theta,phi)
         # if pz < 0:
         #     vx_dot, vy_dot, vz_dot, px_dot, py_dot, pz_dot, m_dot, psi_dot, theta_dot, phi_dot, alpha_dot, beta_dot, wx_dot, wy_dot, wz_dot = \
         #     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
-        return np.array([vx_dot, vy_dot, vz_dot, px_dot, py_dot, pz_dot, m_dot, psi_dot, theta_dot, phi_dot,alpha_dot,beta_dot,gamma_dot,wx_dot, wy_dot, wz_dot])
+        return np.array([vx_dot, vy_dot, vz_dot, px_dot, py_dot, pz_dot, m_dot, psi_dot, theta_dot, phi_dot,wx_dot, wy_dot, wz_dot])
 
 
     def calcul_force_effect(self):
@@ -155,18 +164,33 @@ class Rocket_system:
         ## in burnning
         if realTime < self.t_b:
             t1 = np.linspace(0,0.05,11)
-            self.force_effect = odeint(self.force_burn,self.zeroparam,t1)
+            # print(self.motor_angle)
+            # print(self.need_motor_angle)
+            # print('motor angle: ',self.motor_angle)
+            # self.motor_angle = self.motor_angle+(self.need_motor_angle - self.motor_angle)*(1/3)
+            self.motor_angle = self.need_motor_angle
+            for i in [0,1,2]:
+                if self.motor_angle[i] > 3:
+                    self.motor_angle[i] = 3
+                elif self.motor_angle[i] < -3:
+                    self.motor_angle[i] = -3
+            print('motor angle: ',self.motor_angle)
+            self.force_effect = odeint(self.force_burn,self.zeroparam,t1,tuple(self.motor_angle))
 
 
         ## free fall
         else :
             t2 = np.linspace(0,0.05,11)
+            # t2 = np.arange(0,0.05,0.01)
             self.force_effect = odeint(self.force_free,self.zeroparam,t2)
 
 
     def callback(self,msg):
-        self.angle_dot = msg.data
-
+        self.need_motor_angle = np.array(msg.data)
+        # print('need angle : ',self.need_motor_angle)
+        # print('get Tvc data')
+        Tvc = 'on'
+        rospy.sleep(0.05)        ## 시스템상 0.2초마다 받도록 조절함.
 
 
 
@@ -175,21 +199,23 @@ class Rocket_system:
 if __name__ == '__main__':
     realTime = 0                                # Set real Time 0s
     drag_coeff = 0.4                            # drag coefficient
-    mass_struct = 41.7                          # structure mass (kg)
-    mass_pro = 27.3                             # propellent mass (kg)
+    mass_struct = 3                          # structure mass (kg)
+    mass_pro = 0.5                             # propellent mass (kg)
     position = np.array([0,0,0])                # rocket initial posision (x,y,z (m))
     velocity = np.array([0,0,0])                # rocket initial velocity (x,y,z (m))
     angular_velocity = np.array([0,0,0])        # rocket initial angular velocity (r,p,y (rad/s))
-    rocket_angle = [0,0,35]                     # rocket initial angle (r,p,y ('))
-    motor_angle = [0,0,0]                       # rocket initial motor angle (r,p,y ('))
-    rocket_length = 2.875                       # rocket length (m)
-    mass_center = [2,1]                         # rocket mass center of structure, propellant (m from bottom)
-    diameter = 0.132                            # rocket outside diameter (m)
-    trust = np.array([0,0,23260])               # trust (N)
-    burnTime = 2.7                              # burnning time (s)
+    rocket_angle = [0,0,10]                     # rocket initial angle (r,p,y ('))
+    motor_angle = np.array([0,0,0])                       # rocket initial motor angle (r,p,y ('))
+    rocket_length = 1.2                       # rocket length (m)
+    mass_center = [0.6,0.1]                         # rocket mass center of structure, propellant (m from bottom)
+    aerocenter = 0.5
+    diameter = 0.09                            # rocket outside diameter (m)
+    trust = np.array([0,0,100])               # trust (N)
+    burnTime = 3.5                              # burnning time (s)
+    Tvc = 'off'
 
     rocket = Rocket_system(mass_struct,mass_pro,burnTime,drag_coeff,position,velocity,angular_velocity,\
-                           rocket_angle,motor_angle,rocket_length,mass_center,diameter,trust)
+                           rocket_angle,motor_angle,rocket_length,mass_center,aerocenter,diameter,trust)
 
     rospy.init_node('simulation')
     pub = rospy.Publisher('data',Float32MultiArray,queue_size=10)
@@ -198,7 +224,7 @@ if __name__ == '__main__':
     fig = plt.figure(facecolor='w')
     # ax = fig.add_subplot(111,projection='3d')                 ## 3d plot
     ax = fig.add_subplot(1,1,1)                                 ## 2d plot
-    ax2 = ax.twinx()                                            ## set second y-axis
+    # ax2 = ax.twinx()                                            ## set second y-axis
 
     rocket_shape = []                                           ## set rocket shape
     rocket_pos_list = np.empty((0,3))                           ## save all position for plotting
@@ -213,15 +239,28 @@ if __name__ == '__main__':
     Max_velocity = 0
     Max_x = 0
 
+    while realTime <= 10:                                      ## flight time (s)
+        # for i in [10,11,12]:
+        #     if rocket.zeroparam[i] > 3:
+        #         rocket.zeroparam[i] = 3
+        #     if rocket.zeroparam[i] < -3:
+        #         rocket.zeroparam[i] = -3
+        data = Float32MultiArray()
+        angle_data = rocket.zeroparam[7:10]
+        w_data = rocket.zeroparam[10:13]
+        data.data = np.append(angle_data,w_data,axis=0)
+        # print(data.data)
+        pub.publish(data)
+        # print(rocket.zeroparam[10:13])
+        rospy.sleep(0.1)
 
-    while realTime <= 120:                                      ## flight time (s)
         rocket.calcul_force_effect()
         rocket.zeroparam = rocket.force_effect[-1]
+        print(rocket.zeroparam[5])
 
-
-        data = Float32MultiArray()
-        data.data = np.append(rocket.zeroparam,rocket.w_dot,axis=0)
-        pub.publish(data)
+        # data = Float32MultiArray()
+        # data.data = np.append(rocket.zeroparam,rocket.w_dot,axis=0)
+        # pub.publish(data)
         rospy.sleep(0.01)
 
         rocket_angle_list = np.append(rocket_angle_list,np.array([[rocket.zeroparam[7],rocket.zeroparam[8],rocket.zeroparam[9]]]),axis=0)
@@ -230,7 +269,7 @@ if __name__ == '__main__':
 
 
         M2 = Transformer().body_to_earth(np.array([rocket.force_effect[-1,7], rocket.force_effect[-1,8], rocket.force_effect[-1,9]]))
-        rocket_pos_vector = 100*M2@[0,0,1]                               ## rocket body vector in ground (half size of rocket)
+        rocket_pos_vector = 20*M2@[0,0,1]                               ## rocket body vector in ground (half size of rocket)
 
         if rocket.zeroparam[2] < 0 and rocket.zeroparam[5] > 100 and eject_num == 0:    ## calculate Apogee / ejection
             Apogee = rocket.zeroparam[5]
@@ -252,27 +291,28 @@ if __name__ == '__main__':
         rocket_pos_center = np.array([rocket.force_effect[-1,3],rocket.force_effect[-1,4],rocket.force_effect[-1,5]])
         rocket_velocity_list = np.append(rocket_velocity_list,np.array([[rocket.force_effect[-1,0],rocket.force_effect[-1,1],rocket.force_effect[-1,2]]]),axis=0)
         rocket_pos_list = np.append(rocket_pos_list,np.array([[rocket.force_effect[-1,3],rocket.force_effect[-1,4],rocket.force_effect[-1,5]]]),axis=0)
+        # print(rocket_pos_list)
         rocket_shape.append([[rocket_pos_center[0]-rocket_pos_vector[0],rocket_pos_center[0]+rocket_pos_vector[0]],
-                             [rocket_pos_center[1]-rocket_pos_vector[1],rocket_pos_center[1]+rocket_pos_vector[1]],
-                             [rocket_pos_center[2]-rocket_pos_vector[2],rocket_pos_center[2]+rocket_pos_vector[2]]])
+                            [rocket_pos_center[1]-rocket_pos_vector[1],rocket_pos_center[1]+rocket_pos_vector[1]],
+                            [rocket_pos_center[2]-rocket_pos_vector[2],rocket_pos_center[2]+rocket_pos_vector[2]]])
         # rocket shape : center of mass - body vector    ~~    center of mass + body vector
         realTime += 0.05
 
 
     ## make animation
-    def animate(i):
-        ax.clear()
-        ax2.clear()                                                    # initialization
-        # ax.set_xlim(-1500, 1500)
-        # ax.set_ylim(-1500, 1500)
-        # ax.set_zlim(0, 1500)
+    # def animate(i):
+        # ax.clear()
+        # ax2.clear()                                                    # initialization
+        # ax.set_xlim(0, 45000)
+        # ax.set_ylim(0, 45000)
+        # ax.set_zlim(0, 1000)
         # ax.view_init(elev=90., azim=60)                              # set view angle
-        ax.set_xlim(0,40)
-        ax.set_xlabel('time')                                          # set x label
-        ax.set_ylim(-100,800)
-        ax.set_ylabel('altitude')                                      # set y label
-        ax2.set_ylim(-30,150)
-        ax2.set_ylabel('Vertical Velocity, acceleration')              # set second y label                                                            
+        # ax.set_xlim(-800,800)
+        # ax.set_xlabel('time')                                          # set x label
+        # ax.set_ylim(-800,800)
+        # ax.set_ylabel('altitude')                                      # set y label
+        # ax2.set_ylim(-30,150)
+        # ax2.set_ylabel('Vertical Velocity, acceleration')              # set second y label                                                            
         
         # x = rocket_shape[i][0]
         # y = rocket_shape[i][1]
@@ -280,17 +320,17 @@ if __name__ == '__main__':
 
         # ax.plot(rocket_pos_list[:i,0],rocket_pos_list[:i,1],rocket_pos_list[:i,2],'b-',label = '1st')   
         # time = i*0.05
-        # ax.text(-100,-100,0,'Time = %.1fs'%time)                                                           # plot time
-        # ax.text(-80,-80,100,'Altitude = %.1fm'%rocket_pos_list[i,2])
+        # ax.text(1000,1000,1000,'Time = %.1fs'%time)                                                           # plot time
+        # ax.text(1000,1000,3000,'Altitude = %.1fm'%rocket_pos_list[i,2])
 
         # if rocket_velocity_list[i,2] < 0 and rocket_pos_list[i,2] > 100:
-        #     ax.text(-100,-100,200,'Eject Altitude = %.1fm'%Apogee)
+        #     ax.text(10000,10000,10000,'Eject Altitude = %.1fm'%Apogee)
 
-        x = np.linspace(0,i*0.05,i+1)
-        y = 90-rocket_angle_list[0:i+1,2]
-        y = rocket_pos_list[0:i+1,2]
-        y2 = rocket_velocity_list[0:i+1,2]
-        y3 = rocket_accel_list[0:i+1,2]
+        # x = np.linspace(0,i*0.05,i+1)
+        # y = 90-rocket_angle_list[0:i+1,2]
+        # y = rocket_pos_list[0:i+1,2]
+        # y2 = rocket_velocity_list[0:i+1,2]
+        # y3 = rocket_accel_list[0:i+1,2]
         
         
         # plt.plot.axhline(y=50)
@@ -300,26 +340,33 @@ if __name__ == '__main__':
 
         # return ax.plot(x,y,z,color = 'k', lw = 2)  
         
-        ax2.plot(x,x*0,linestyle = '--')
-        ax2.plot(x,y2,'b',lw=2)
-        ax2.plot(x,y3,'g',lw=2)
-        return ax.plot(x,y,'r',lw=2)                                                         # plot rocket
+        # ax2.plot(x,x*0,linestyle = '--')
+        # ax2.plot(x,y2,'b',lw=2)
+        # ax2.plot(x,y3,'g',lw=2)
+        # return ax.plot(x,y,'r',lw=2)                                                         # plot rocket
 
-    # animate = animation.FuncAnimation(fig,animate, frames = 800, interval=3)                                # make animation
-    ax.set_xlim(0,45000)
-    ax.set_xlabel('x')
-    ax.set_ylim(-100,20000)
-    ax.set_ylabel('y')
-    # ax2.set_ylim(-2000,20000)
-    ax2.set_ylabel('Vertical Velocity, acceleration')
-    x = np.linspace(0,120,2401)
+    # animate = animation.FuncAnimation(fig,animate, frames = 400, interval=1)                                # make animation
+    ax.set_xlim(0,20)
+    ax.set_xlabel('time')
+    ax.set_ylim(-90,90)
+    ax.set_ylabel('angle')
+    # ax2.set_ylim(-100,2000)
+    # ax2.set_ylabel('Vertical Velocity, acceleration')
+    # x = np.linspace(0,10,201)
+    x = np.arange(0,10,0.05)
     # ax.plot(x,x*0,linestyle='--')
     # ax2.plot(x,x*0,linestyle='--')
-    ax.plot(rocket_pos_list[:,0],rocket_pos_list[:,2],'r')
+    # ax.plot(rocket_pos_list[:,0],rocket_pos_list[:,2],'r')
+    y = rocket_angle_list[:,2]
+    # print(len(y))
+    # x = rocket_pos_list[:,0]
+    # y = rocket_pos_list[:,2]
+    ax.plot(x,y)
+    plt.axhline(y=20)
     # ax2.plot(x,rocket_velocity_list[:,2],'b')
     # ax2.plot(x,rocket_accel_list[:,2],'g')
-    ax.text(1000,3000,'Apogee : %.1fm'%Apogee)
-    ax.text(1000,4000,'Max x : %.1fm'%Max_x)
+    # ax.text(1000,3000,'Apogee : %.1fm'%Apogee)
+    # ax.text(1000,4000,'Max x : %.1fm'%Max_x)
     # ax.text(23,400,'Max velocity : %.1fm/s'%Max_velocity)
     # ax.text(23,500,'Max acceleration : %.1fm/s'%Max_acceleration)
 
@@ -329,5 +376,5 @@ if __name__ == '__main__':
     plt.show()
     plt.rcParams['font.size'] = 10
     print('---saving---please wait---about 30 second---')
-    # animate.save("Tvc(yow : 20', pich : 20').mp4",fps=20)                                                            # save, 1 frame => 0.05s ( 30 fps = 1.5 real fps)
+    # animate.save("Tvc(yow : 20', pich : 20').mp4",fps=20)              # save, 1 frame => 0.05s ( 30 fps = 1.5 real fps)
     print('---finish---check your folder which this file is in---')
