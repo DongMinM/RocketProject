@@ -1,7 +1,5 @@
-from datahub import DataHub
 import rospy
 from std_msgs.msg import Float32MultiArray
-from std_msgs.msg import String
 
 
 class MissionPlanner:
@@ -9,13 +7,14 @@ class MissionPlanner:
         rospy.init_node('MissionPlanner')
         self.pub = rospy.Publisher('MissionCode',Float32MultiArray,queue_size=1)
         self.data = []
-        # self.datahub.data : vx, vy, vz, px, py, pz, m, psi, theta, phi, alpha, beta, gamma, wx, wy, wz
+        # self.datahub.data : psi, theta, phi, wx, wy, wz
 
 
     def run(self):
         rospy.Subscriber('data',Float32MultiArray, self.callback)
+        
         while True:
-            if len(self.data) > 0:
+            if len(self.data) > 0:                      ## tvc triger
                 # print(self.data[5])
                 data = Float32MultiArray()
                 data.data = self.data
