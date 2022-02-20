@@ -14,9 +14,9 @@ class Actuator:
         self.Kp = 0.78                   ## 0.078    
         self.Ki = 0.39                   ## 0.049     
         self.Kd = 0.94                   ## 0.25~0.255     
-        self.gap_angle = np.array([0,0,0])
+
         self.Error_sum = 0
-        self.last_Error = np.array([0,0,-10])
+        self.last_Error = np.array([0,0,-10])       # 초기 에러 rocket angle - set angle 로 설정 해 주어야 함.
         rospy.init_node('Actuator')
         self.pub = rospy.Publisher('Actuator',Float32MultiArray,queue_size=1)
 
@@ -32,20 +32,11 @@ class Actuator:
         P = self.Kp*Error
         self.Error_sum += Error
         I = self.Ki*self.Error_sum*0.2
-        print(self.Error_sum)
-        # print(self.Error_sum)
-        # print('I : ',I)
         D = self.Kd*(Error-self.last_Error)/0.2
-        # D = self.Kd*self.w*180/np.pi
-        # print('P : ',P)
-        # print('D : ',D)
         self.last_Error = Error
-        # print(I)
-        # print('sumI : ',self.sumI)
-        self.gap_angle = Error
-        motor_angle_dot = P+I+D
+        motor_angle = P+I+D
         tvcdata = Float32MultiArray()
-        tvcdata.data = np.array([motor_angle_dot[0],motor_angle_dot[1],motor_angle_dot[2]])
+        tvcdata.data = np.array([motor_angle[0],motor_angle[1],motor_angle[2]])
         self.pub.publish(tvcdata)
         rospy.sleep(0.05)
 

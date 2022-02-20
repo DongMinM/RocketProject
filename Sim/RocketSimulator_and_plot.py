@@ -59,28 +59,12 @@ class Rocket_system:
 
     ## in burnning
     def force_burn(self,zeroparam,t,alpha,beta,gamma):
-        # print(realTime)
-        # print('angle dot : ', self.angle_dot)
-        # T = [0,0,200]      ## set trust function
-        # print(T)
+
         T = self.T
         vx, vy, vz, px, py, pz, m, psi, theta, phi,wx, wy, wz = zeroparam
-        # self.motor_angle = np.array([alpha,beta,gamma])
-        # print(alpha,beta,gamma)
-        self.total_mass_center = (self.mass_center[0]*self.mass_struct+self.mass_center[1]*(m-self.mass_struct))/m
-        # print(self.total_mass_center)
-        # print(alpha,beta,gamma)
-        # Set Tvc angle limit (')
-        # if beta > 3:
-        #     beta = 3
-        # elif beta < -3 :
-        #     beta = -3
 
-        # if gamma > 3 :
-        #     gamma = 3
-        # elif gamma < -3:
-        #     gamma = -3
-        # print(alpha,beta,gamma)
+        self.total_mass_center = (self.mass_center[0]*self.mass_struct+self.mass_center[1]*(m-self.mass_struct))/m
+
         M1 = Transformer().body_to_earth([psi, theta, phi])                             ## transform metrix rocket -> ground
         con_vec = Transformer().body_to_earth(np.array([alpha, beta, gamma]))           ## transform metrix motor -> rocket
 
@@ -164,10 +148,7 @@ class Rocket_system:
         ## in burnning
         if realTime < self.t_b:
             t1 = np.linspace(0,0.05,11)
-            # print(self.motor_angle)
-            # print(self.need_motor_angle)
-            # print('motor angle: ',self.motor_angle)
-            # self.motor_angle = self.motor_angle+(self.need_motor_angle - self.motor_angle)*(1/3)
+
             self.motor_angle = self.need_motor_angle
             for i in [0,1,2]:
                 if self.motor_angle[i] > 3:
@@ -181,14 +162,13 @@ class Rocket_system:
         ## free fall
         else :
             t2 = np.linspace(0,0.05,11)
-            # t2 = np.arange(0,0.05,0.01)
+
             self.force_effect = odeint(self.force_free,self.zeroparam,t2)
 
 
     def callback(self,msg):
         self.need_motor_angle = np.array(msg.data)
-        # print('need angle : ',self.need_motor_angle)
-        # print('get Tvc data')
+
         Tvc = 'on'
         rospy.sleep(0.05)        ## 시스템상 0.2초마다 받도록 조절함.
 
@@ -211,7 +191,7 @@ if __name__ == '__main__':
     aerocenter = 0.5
     diameter = 0.09                            # rocket outside diameter (m)
     trust = np.array([0,0,100])               # trust (N)
-    burnTime = 3.5                              # burnning time (s)
+    burnTime = 10                              # burnning time (s)
     Tvc = 'off'
 
     rocket = Rocket_system(mass_struct,mass_pro,burnTime,drag_coeff,position,velocity,angular_velocity,\
@@ -240,27 +220,21 @@ if __name__ == '__main__':
     Max_x = 0
 
     while realTime <= 10:                                      ## flight time (s)
-        # for i in [10,11,12]:
-        #     if rocket.zeroparam[i] > 3:
-        #         rocket.zeroparam[i] = 3
-        #     if rocket.zeroparam[i] < -3:
-        #         rocket.zeroparam[i] = -3
+
         data = Float32MultiArray()
         angle_data = rocket.zeroparam[7:10]
         w_data = rocket.zeroparam[10:13]
         data.data = np.append(angle_data,w_data,axis=0)
-        # print(data.data)
+
         pub.publish(data)
-        # print(rocket.zeroparam[10:13])
+
         rospy.sleep(0.1)
 
         rocket.calcul_force_effect()
         rocket.zeroparam = rocket.force_effect[-1]
         print(rocket.zeroparam[5])
 
-        # data = Float32MultiArray()
-        # data.data = np.append(rocket.zeroparam,rocket.w_dot,axis=0)
-        # pub.publish(data)
+
         rospy.sleep(0.01)
 
         rocket_angle_list = np.append(rocket_angle_list,np.array([[rocket.zeroparam[7],rocket.zeroparam[8],rocket.zeroparam[9]]]),axis=0)
