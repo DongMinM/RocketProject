@@ -7,15 +7,14 @@ class MissionPlanner:
         rospy.init_node('MissionPlanner')
         self.pub = rospy.Publisher('MissionCode',Float32MultiArray,queue_size=1)
         self.data = []
-        # self.datahub.data : psi, theta, phi, wx, wy, wz
+        # self.data : psi, theta, phi, wx, wy, wz
 
 
     def run(self):
         rospy.Subscriber('data',Float32MultiArray, self.callback)
-        
+
         while True:
             if len(self.data) > 0:                      ## tvc triger
-                # print(self.data[5])
                 data = Float32MultiArray()
                 data.data = self.data
                 self.pub.publish(data)

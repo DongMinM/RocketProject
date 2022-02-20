@@ -1,6 +1,3 @@
-from decimal import MAX_EMAX
-import math
-
 from transform import Transformer
 from scipy.integrate import odeint
 import numpy as np
