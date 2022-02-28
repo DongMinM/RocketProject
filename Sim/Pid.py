@@ -5,8 +5,8 @@ from std_msgs.msg import Float32MultiArray
 
 class Actuator:
     def __init__(self):
-        self.angle = np.array([0,0,0])       
-        self.set_angle = np.array([0,0,20])
+        self.angle = np.array([0,0,0])                      ## rocket angle
+        self.set_angle = np.array([0,0,20])                 ## set angle
 
         self.Kp = 0.78                   ## 0.78    
         self.Ki = 0.39                   ## 0.39     
@@ -20,14 +20,14 @@ class Actuator:
 
     def tvc(self):
 
-        for i in [0,1,2]:
+        for i in [0,1,2]:                                   ## angle set -180 ~ 180
             while self.angle[i] > 180:
                 self.angle[i] -= 360
             while self.angle[i] < -180:
                 self.angle[i] += 360
 
         Error = self.angle - self.set_angle
-        print(Error)
+        print('Error : ',Error)
 
         P = self.Kp*Error
         self.Error_sum += Error
@@ -35,7 +35,7 @@ class Actuator:
         D = self.Kd*(Error-self.last_Error)/0.2
         self.last_Error = Error
         motor_angle = P+I+D
-
+        print('motor angle : ',motor_angle)
         tvcdata = Float32MultiArray()
         tvcdata.data = np.array([motor_angle[0],motor_angle[1],motor_angle[2]])
         self.pub.publish(tvcdata)
@@ -47,7 +47,7 @@ class Actuator:
 
     def missionstarter(self,msg):
         # msg.data : psi, theta, phi, wx, wy, wz
-        self.angle = np.array([msg.data[0],msg.data[1],msg.data[2]]) 
+        self.angle = np.array([msg.data[0],msg.data[1],msg.data[2]])        ## read rocket angle
         self.tvc()
 
 
