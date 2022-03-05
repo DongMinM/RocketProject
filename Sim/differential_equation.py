@@ -41,16 +41,15 @@ class Differentail_equation:
         torque_of_drag= np.cross(v_aerodynamic,D)                           ## calculate torque of drag
 
         ''' differential equation ''' 
-        '''w_dot = T / m
+        '''w_dot = T / I
            angle_dot = w
            mass_dot = total mass / burnning time
            velocity_dot = F/m
            position_dot = velocity'''
-        wx_dot, wy_dot, wz_dot = (torque+torque_of_drag)/m                  ## differential equation of angular acceleration
+        wx_dot, wy_dot, wz_dot = (torque+torque_of_drag)/(m*self.rocket.rocket_length**2)                  ## differential equation of angular acceleration
         theta_dot, phi_dot, psi_dot = w*180/np.pi                           ## differential equation of angul
         m_dot = -self.rocket.mass_pro/self.rocket.t_b                       ## differential equation of propellent mass
         vx_dot, vy_dot, vz_dot = (T+D)/m -g                                 ## differential equation of velocity of rocket
-        
         if vz_dot<=0:                                                       ## rocket can't go under the ground
             vz_dot =0
 
@@ -82,17 +81,17 @@ class Differentail_equation:
         torque_of_drag= np.cross(v_aerodynamic,D)                            ## 항력 에 의한 토크
 
         ''' 미분 방정식 '''
-        '''w_dot = T / m
+        '''w_dot = T / I
            angle_dot = w
            mass_dot = 0
            velocity_dot = F/m
            position_dot = velocity'''
-        wx_dot, wy_dot, wz_dot =  torque_of_drag/m                         
+        wx_dot, wy_dot, wz_dot =  torque_of_drag/(m*self.rocket.rocket_length**2)                        
         theta_dot, phi_dot, psi_dot = w*180/np.pi
         m_dot = 0
         vx_dot, vy_dot, vz_dot = D/m -g
         px_dot, py_dot, pz_dot = v
-
+        
         self.rocket.accel = np.array([vx_dot,vy_dot,vz_dot])
 
         # if pz < 0:
