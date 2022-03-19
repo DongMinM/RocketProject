@@ -94,9 +94,9 @@ class Differentail_equation:
         
         self.rocket.accel = np.array([vx_dot,vy_dot,vz_dot])
 
-        # if pz < 0:
-        #     vx_dot, vy_dot, vz_dot, px_dot, py_dot, pz_dot, m_dot, psi_dot, theta_dot, phi_dot, alpha_dot, beta_dot, wx_dot, wy_dot, wz_dot = \
-        #     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        if pz < 0:
+            vx_dot, vy_dot, vz_dot, px_dot, py_dot, pz_dot, m_dot, psi_dot, theta_dot, phi_dot, alpha_dot, beta_dot, wx_dot, wy_dot, wz_dot = \
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
         return np.array([vx_dot, vy_dot, vz_dot, px_dot, py_dot, pz_dot, m_dot, psi_dot, theta_dot, phi_dot,wx_dot, wy_dot, wz_dot])
 

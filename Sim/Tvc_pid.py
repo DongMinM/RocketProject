@@ -6,14 +6,14 @@ from std_msgs.msg import Float32MultiArray
 class Actuator:
     def __init__(self):
         self.angle = np.array([0,0,0])                      ## rocket angle
-        self.set_angle = np.array([0,0,20])                 ## set angle
+        self.set_angle = np.array([0,0,30])                 ## set angle
 
         self.Kp = 0.32                   ## 0.78    0.3    0.32
         self.Ki = 0.18                   ## 0.39    0.1    0.18
         self.Kd = 0.28                   ## 0.94    0.2    0.28
 
         self.Error_sum = 0
-        self.last_Error = np.array([0,0,-10])       # 초기 에러 rocket angle - set angle 로 설정 해 주어야 함.
+        self.last_Error = np.array([0,0,0])       # 초기 에러 rocket angle - set angle 로 설정 해 주어야 함.
 
         rospy.init_node('Actuator')
         self.pub = rospy.Publisher('Actuator',Float32MultiArray,queue_size=1)
@@ -43,6 +43,7 @@ class Actuator:
         rospy.sleep(0.01)
 
     def run(self):
+        print('---START THRUST VECTOR CONTROL---')
         rospy.Subscriber('MissionCode',Float32MultiArray, self.missionstarter)
         rospy.spin()
 

@@ -50,33 +50,38 @@ class Rocket_system:
         self.accel = np.empty((0,3))                                    ## 가속도 저장 공간
         self.tvc_motor_angle = np.array([0,0,0])                        ## Tvc 각도
         self.params = []                                                ## 상태값 저장 공간
-
+        
         rospy.Subscriber('Actuator',Float32MultiArray,self.readTvc)
-
+        self.subNum = 0
     def calculate_next_pos_of_rocket(self):
 
         ## in burnning
         if self.realTime < self.t_b:
             self.motor_angle = self.motor_angle+(self.tvc_motor_angle-self.motor_angle)/4         ## Read tvc angle. defualt is [0,0,0]
-
+            self.subNum = 0
             self.motor_angle[0] = 0
-            print(self.motor_angle)
+            print('Motor angle : ',self.motor_angle)
             self.params = Differentail_equation(self).in_burnning(self.motor_angle)     ## 추진 중 미분 방정식
 
 
         ## free fall
         else :
-
+            if round(self.realTime,5) == 15:
+                print('---Finish Burnning---')
             self.params = Differentail_equation(self).end_of_burnning()                 ## 자유 낙하 미분 방정식
 
 
-    def readTvc(self,msg):                                  ## subscribe tvc angle ( msg => 0, ahphe, beta)
-        self.tvc_motor_angle = np.array(msg.data)
-        for i in [1,2]:                               ## Tvc각 제한 [roll,pich,yow (')]
-            if self.tvc_motor_angle[i] > 3:
-                self.tvc_motor_angle[i] = 3
-            elif self.tvc_motor_angle[i] < -3:
-                self.tvc_motor_angle[i] = -3
-        
-        rospy.sleep(0.01)  
-        print('Get Tvc angle')     
+    def readTvc(self,msg):
+        if self.realTime <= self.t_b and self.subNum == 0:                                  ## subscribe tvc angle ( msg => 0, ahphe, beta)
+            self.tvc_motor_angle = np.array(msg.data)
+            for i in [1,2]:                               ## Tvc각 제한 [roll,pich,yow (')]
+                if self.tvc_motor_angle[i] > 3:
+                    self.tvc_motor_angle[i] = 3
+                elif self.tvc_motor_angle[i] < -3:
+                    self.tvc_motor_angle[i] = -3
+            
+            rospy.sleep(0.01)  
+            print('Get Tvc angle')
+            self.subNum += 1 
+        else :
+            pass    

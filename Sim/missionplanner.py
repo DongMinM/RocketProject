@@ -12,14 +12,15 @@ class MissionPlanner:
 
     def run(self):
         rospy.Subscriber('data',Float32MultiArray, self.callback)
-
+        print('---Mission Planner On---')
         while True:
             if len(self.data) > 0:                      ## tvc triger
                 data = Float32MultiArray()
                 data.data = self.data
                 self.pub.publish(data)
+                print('Read data')
             else:
-                print('No data')
+                pass
             rospy.sleep(0.3)
 
     def callback(self,msg):
