@@ -14,7 +14,7 @@ if __name__ == '__main__':
     '''Set initial status'''
     position = np.array([0,0,0])                # rocket initial posision (x,y,z (m))
     velocity = np.array([0,0,0])                # rocket initial velocity (x,y,z (m/s))
-    rocket_angle = np.array([0,0,10])           # rocket initial angle (r,p,y ('))
+    rocket_angle = np.array([0,0,23])           # rocket initial angle (r,p,y ('))
     angular_velocity = np.array([0,0,0])        # rocket initial angular velocity (r,p,y (rad/s))
 
     '''Set rocket body'''
@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
 
 
-
+    print("---START ROCKET SIMULATOR---")
 
 
 
@@ -51,8 +51,8 @@ if __name__ == '__main__':
 
     # Ready to plotting
     fig = plt.figure(facecolor='w')                             ## plotting figure
-    # ax = fig.add_subplot(111,projection='3d')                   ## 3d plot
-    ax = fig.add_subplot(1,1,1)                                 ## 2d plot
+    ax = fig.add_subplot(111,projection='3d')                   ## 3d plot
+    # ax = fig.add_subplot(1,1,1)                                 ## 2d plot
     # ax2 = ax.twinx()                                            ## set second y-axis
     
     ''' initialization  '''
@@ -71,18 +71,21 @@ if __name__ == '__main__':
 
 
     ''' Main loop '''
-    while rocket.realTime <= 20:                                ## flight time (s)
+    while rocket.realTime <= 25:                                ## flight time (s)
+
+        rocket.calculate_next_pos_of_rocket()                   ## calculate next params of rocket ( main simulator )
+        rocket.zeroparam = rocket.params[-1]                    ## initialization zeroparam
 
         data = Float32MultiArray()
         angle_data = rocket.zeroparam[7:10]                     ## get angle
         w_data = rocket.zeroparam[10:13]                        ## get anguler velocity
-        data.data = np.append(angle_data,w_data,axis=0)         ## publish rocket angle, w
+        # print(rocket.accel)
+        data.data = np.append(rocket.zeroparam[0:6],rocket.accel,axis=0)
+        data.data = np.append(data.data,angle_data,axis=0)
+        data.data = np.append(data.data,w_data,axis=0)         ## publish rocket angle, w
         pub2missionplanner.publish(data)                        ## publish angle and anguler velocity
-
-        # rospy.sleep(0.07)                                     
-
-        rocket.calculate_next_pos_of_rocket()                   ## calculate next params of rocket ( main simulator )
-        rocket.zeroparam = rocket.params[-1]                    ## initialization zeroparam
+        rospy.sleep(0.01)                                     
+        print(rocket.zeroparam[2],rocket.zeroparam[5],rocket.accel[2])
 
 
         # Apogee
@@ -131,7 +134,7 @@ if __name__ == '__main__':
         # rocket shape for plotting
 
         M2 = Transformer().body_to_earth(np.array([rocket.params[-1,7], rocket.params[-1,8], rocket.params[-1,9]]))         # transform matrix rocket => ground
-        rocket_pos_vector = 50*M2@[0,0,1]                               ## rocket body vector (20은 시뮬레이션상 로켓 크기이며, 보기 편하도록 조절해주시면 됩니다.)
+        rocket_pos_vector = 20*M2@[0,0,1]                               ## rocket body vector (20은 시뮬레이션상 로켓 크기이며, 보기 편하도록 조절해주시면 됩니다.)
 
         rocket_shape.append([[rocket_pos_center[0]-rocket_pos_vector[0],rocket_pos_center[0]+rocket_pos_vector[0]],
                              [rocket_pos_center[1]-rocket_pos_vector[1],rocket_pos_center[1]+rocket_pos_vector[1]],
@@ -145,14 +148,18 @@ if __name__ == '__main__':
     """ 3D animation """
     def animate(i):
         ax.clear()                                                  # initialization
-        ax.set_xlim(0, 600)
-        ax.set_ylim(0, 600)
-        ax.set_zlim(0, 600)
+        ax.set_xlim(0, 500)
+        ax.set_ylim(0, 500)
+        ax.set_zlim(0, 500)
+        ax.grid(False)
+        ax.view_init(elev=0., azim=270)                             # view angle
+        # ax.set_xlabel('x')                                          # set x label
+        # ax.set_ylabel('y')                                          # set y label                                                          
+        # ax.set_zlabel('altitude')                                   # set z label
 
-        # ax.view_init(elev=90., azim=60)                             # view angle
-        ax.set_xlabel('x')                                          # set x label
-        ax.set_ylabel('y')                                          # set y label                                                          
-        ax.set_zlabel('altitude')                                   # set z label
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_zticks([])
 
         x = rocket_shape[i][0]
         y = rocket_shape[i][1]
@@ -161,18 +168,19 @@ if __name__ == '__main__':
         ax.plot(rocket_pos_list[:i,0],rocket_pos_list[:i,1],rocket_pos_list[:i,2],'b-',label = '1st')   
 
         time = i*0.05
-        ax.text(100,100,100,'Time = %.1fs'%time)                                                           # plot time
-        ax.text(100,100,200,'Altitude = %.1fm'%rocket_pos_list[i,2])
-        
+        ax.text(400,1000,2400,'Time = %.1fs'%time)                                                           # plot time
+        ax.text(400,1000,2700,'Altitude = %.1fm'%rocket_pos_list[i,2])
+        ax.text(400,1000,3000,'Apogee = %.1fm'%Apogee)
+
         return ax.plot(x,y,z,color = 'k', lw = 2)  
      
-    # animate = animation.FuncAnimation(fig,animate, frames = 300, interval=1) 
+    animate = animation.FuncAnimation(fig,animate, frames = 500, interval=1) 
 
 
     """ 2D plotting """
-    ax.set_xlim(0,500)                                                      ## set x line
+    # ax.set_xlim(0,500)                                                      ## set x line
     # ax.set_xlabel('Time')                                                   ## set x label
-    ax.set_ylim(0,500)                                                      ## set y line
+    # ax.set_ylim(0,500)                                                      ## set y line
     # ax.set_ylabel('Total mass')                                             ## set y label
     # ax2.set_ylim(-100,2000)                                               ## set second y line
     # ax2.set_ylabel('Vertical Velocity, acceleration')                     ## set second y label
@@ -180,22 +188,22 @@ if __name__ == '__main__':
     # x coordinate
     # x = np.linspace(0,25,501)                                             ## time space (s)
     # x = np.arange(0,15,0.05)                                              ## time space (s)
-    x = rocket_pos_list[:,0]                                              ## rocket pos x (m)
+    # x = rocket_pos_list[:,0]                                              ## rocket pos x (m)
     # ax.plot(x,x*0,linestyle='--')                                         ## Draw line y = 0
 
     # y coordinate
     # y = rocket_angle_list[:,2]                                              ## rocket angle (yaw)
-    y = rocket_pos_list[:,2]                                                ## rocket pos z (m)
+    # y = rocket_pos_list[:,2]                                                ## rocket pos z (m)
     # y = rocket_velocity_list[:,2]                                           ## rocket velocity Vz (m/s)
     # y = rocket_total_velocity_list[:,0]                                     ## rocket total velocity (m/s)
     # y = rocket_total_mass[:,0]                                              ## rocket mass (kg)
     # y = rocket_accel_list[:,2]                                              ## rocket acceleration Az (m/s^2)
 
 
-    ax.plot(x,y)                                                          ## plot x,y function
+    # ax.plot(x,y)                                                          ## plot x,y function
     # plt.axhline(y=20,ls='--')                                             ## Draw line y = 70
 
-    ax.text(300,300,'Apogee : %.1fm'%Apogee)                                        ## Write text (Apogee )
+    # ax.text(300,300,'Apogee : %.1fm'%Apogee)                                        ## Write text (Apogee )
     # ax.text(1000,4000,'Max x : %.1fm'%Max_x)                                          ## Write text ( Max pos x )
     # ax.text(30,1000,'Max velocity : %.1f m/s'%np.max(rocket_total_velocity_list))     ## Write text ( total velocity )
     # ax.text(23,500,'Max acceleration : %.1fm/s'%Max_acceleration)                     ## Write text ( Max acceleration )
@@ -203,5 +211,5 @@ if __name__ == '__main__':
     print('---plotting---please wait------')
     plt.show()                                                              ## show picture
     plt.rcParams['font.size'] = 10                                          ## font size
-    # animate.save("file name').mp4",fps=20)                                ## save, 1 frame => 0.05s ( 30 fps = 1.5 real fps)
+    # animate.save('Tvc_on.mp4',fps=60)                                ## save, 1 frame => 0.05s ( 30 fps = 1.5 real fps)
     print('---finish---check your folder which this file is in---')

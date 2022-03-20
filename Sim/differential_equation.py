@@ -63,6 +63,7 @@ class Differentail_equation:
     ## free fall
     def force_free(self,zeroparam,t):
         vx, vy, vz, px, py, pz, m, psi, theta, phi,wx, wy, wz= zeroparam
+        # print(pz)
 
         v = np.array([vx,  vy,  vz])                                                    ## 속도 (m/s)
         p = np.array([px,  py,  pz])                                                    ## 위치 (m/s)
@@ -82,10 +83,10 @@ class Differentail_equation:
 
         ''' 미분 방정식 '''
         '''w_dot = T / I
-           angle_dot = w
-           mass_dot = 0
-           velocity_dot = F/m
-           position_dot = velocity'''
+        angle_dot = w
+        mass_dot = 0
+        velocity_dot = F/m
+        position_dot = velocity'''
         wx_dot, wy_dot, wz_dot =  torque_of_drag/(m*self.rocket.rocket_length**2)                        
         theta_dot, phi_dot, psi_dot = w*180/np.pi
         m_dot = 0
@@ -93,11 +94,6 @@ class Differentail_equation:
         px_dot, py_dot, pz_dot = v
         
         self.rocket.accel = np.array([vx_dot,vy_dot,vz_dot])
-
-        if pz < 0:
-            vx_dot, vy_dot, vz_dot, px_dot, py_dot, pz_dot, m_dot, psi_dot, theta_dot, phi_dot, alpha_dot, beta_dot, wx_dot, wy_dot, wz_dot = \
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-
         return np.array([vx_dot, vy_dot, vz_dot, px_dot, py_dot, pz_dot, m_dot, psi_dot, theta_dot, phi_dot,wx_dot, wy_dot, wz_dot])
 
 

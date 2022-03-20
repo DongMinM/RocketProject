@@ -1,8 +1,7 @@
 from transform import Transformer
-from scipy.integrate import odeint
 import numpy as np
 import rospy
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float32MultiArray,String
 from differential_equation import Differentail_equation
 
 
@@ -49,26 +48,35 @@ class Rocket_system:
                                                                         ## 로켓 상태값
         self.accel = np.empty((0,3))                                    ## 가속도 저장 공간
         self.tvc_motor_angle = np.array([0,0,0])                        ## Tvc 각도
-        self.params = []                                                ## 상태값 저장 공간
+        self.params = []                                               ## 상태값 저장 공간
         
-        rospy.Subscriber('Actuator',Float32MultiArray,self.readTvc)
+        rospy.Subscriber('TVC',Float32MultiArray,self.readTvc)
+        # rospy.Subscriber('Motor_seperation',String,self.motor_seperation)
+        # rospy.Subscriber('Payload_seperation',String,self.payload_seperation)
         self.subNum = 0
+
     def calculate_next_pos_of_rocket(self):
 
         ## in burnning
-        if self.realTime < self.t_b:
+        if round(self.realTime,5) < self.t_b:
             self.motor_angle = self.motor_angle+(self.tvc_motor_angle-self.motor_angle)/4         ## Read tvc angle. defualt is [0,0,0]
             self.subNum = 0
             self.motor_angle[0] = 0
-            print('Motor angle : ',self.motor_angle)
+            # print('Motor angle : ',self.motor_angle)
             self.params = Differentail_equation(self).in_burnning(self.motor_angle)     ## 추진 중 미분 방정식
 
 
         ## free fall
         else :
-            if round(self.realTime,5) == 15:
+            if round(self.realTime,5) == 3.5:
                 print('---Finish Burnning---')
-            self.params = Differentail_equation(self).end_of_burnning()                 ## 자유 낙하 미분 방정식
+
+            if self.params[-1][5] <= 0:             ## 착륙 완료
+                self.params[:] = np.array([0,0,0,self.params[-1][3],self.params[-1][4],0,self.params[-1][6],self.params[-1][7],self.params[-1][8],self.params[-1][9],0,0,0])
+                self.accel=np.array([0,0,0])
+
+            else :                                  ## 착륙 x
+                self.params = Differentail_equation(self).end_of_burnning()                 ## 자유 낙하 미분 방정식
 
 
     def readTvc(self,msg):
@@ -85,3 +93,11 @@ class Rocket_system:
             self.subNum += 1 
         else :
             pass    
+    
+    def motor_seperation(self):
+        # self.zeroparam = 
+        pass
+
+    def payload_seperation(self):
+        # self.Cd = 
+        pass
