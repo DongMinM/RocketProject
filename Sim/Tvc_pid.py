@@ -16,7 +16,7 @@ class Actuator:
         self.last_Error = np.array([0,0,0])       # 초기 에러 rocket angle - set angle 로 설정 해 주어야 함.
 
         rospy.init_node('Actuator')
-        self.pub = rospy.Publisher('Actuator',Float32MultiArray,queue_size=1)
+        self.pub = rospy.Publisher('TVC',Float32MultiArray,queue_size=1)
 
     def tvc(self):
 
