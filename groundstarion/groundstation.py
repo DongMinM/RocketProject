@@ -10,7 +10,7 @@ class Gui:
         self.data = []
         rospy.Subscriber('SensorData',Float32MultiArray, self.read)
 
-        self.Bool = ['no','yes']
+        self.Bool = ['No','Yes']
 
     def read(self,msg):
         self.data = msg.data
@@ -56,7 +56,7 @@ class Gui:
     def startWrite(self):
         print(123123123)
         if len(self.data) > 1:
-            self.text.configure(text='Status. burn : '+self.Bool[int(self.data[0])]+', payload seperated : '+self.Bool[int(self.data[1])],font=('HeLvetica',10))
+            self.text.configure(text='Status. burn : '+self.Bool[int(self.data[0])]+', payload seperated : '+self.Bool[int(self.data[1])],font=('HeLvetica',20))
             if self.data[7] == 0:
                 self.text.configure(text='Status : Finish flight')
 

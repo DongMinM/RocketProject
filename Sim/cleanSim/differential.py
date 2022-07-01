@@ -35,19 +35,16 @@ class Differentail_equation:
         v_aerodynamic = M1@[0,0,self.rocket.total_aero_center-self.rocket.total_mass_center]          ## vector from mass center to aero center
 
         S = np.pi*self.rocket.diameter*self.rocket.diameter/4               ## cross-sectional area
-        rho = 1.225*(1-2.256e-5*pz)**5.256                                  ## calculate atmospheric density
+        if pz <= 35000:
+            rho = 1.225*(1-1.8e-5*pz)**5.656                                  ## calculate atmospheric density
+        else :
+            rho = 0.001
         D = -0.5*rho*S*self.rocket.Cd*np.linalg.norm(v)*v                   ## calculate drag force
         torque_of_drag= np.cross(v_aerodynamic,D)                           ## calculate torque of drag
 
-        Para = [0,0,0.5*rho*np.linalg.norm(v)*np.linalg.norm(v)*0.5*np.pi*self.rocket.Cd_para]
+        Para = [0,0,0.5*rho*np.linalg.norm(v)*np.linalg.norm(v)*0.135*np.pi*self.rocket.Cd_para]
         torque_of_para = np.cross(M1@[0,0,2-self.rocket.total_mass_center],Para)
-        # print(Para)
-        ''' differential equation ''' 
-        '''w_dot = T / I
-           angle_dot = w
-           mass_dot = total mass / burnning time
-           velocity_dot = F/m
-           position_dot = velocity'''
+
         wx_dot, wy_dot, wz_dot = (torque+torque_of_drag+torque_of_para)/(0.5*m*self.rocket.rocket_length**2)                  ## differential equation of angular acceleration
         theta_dot, phi_dot, psi_dot = w*180/np.pi                           ## differential equation of angul
         m_dot = -self.rocket.mass_pro/self.rocket.t_b                       ## differential equation of propellent mass
@@ -67,5 +64,5 @@ class Differentail_equation:
 
     def in_burnning(self,motor_angle):              ## in burnning, differential equation
         t1 = np.linspace(0,0.05,11)                 ## differential time => 0.005s
-        self.params = odeint(self.force_burn,self.rocket.zeroparam,t1,tuple(motor_angle))       ## differential equation function
-        return self.params
+        return odeint(self.force_burn,self.rocket.zeroparam,t1,tuple(motor_angle))       ## differential equation function
+

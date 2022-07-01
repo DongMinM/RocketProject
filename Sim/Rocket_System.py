@@ -1,3 +1,4 @@
+from difflib import Differ
 from transform import Transformer
 import numpy as np
 import rospy
@@ -23,7 +24,9 @@ class Rocket_system:
         mass_center,            ## 무게 중심
         aerocenter,             ## 공력 중심
         diameter,               ## 직경
-        thrust                 ## 추력
+        thrust,                 ## 추력
+        Cd_para_on,
+        para_on_h
     ):
         self.mass_struct = mass_struct              
         self.mass_pro = mass_pro                    
@@ -40,6 +43,11 @@ class Rocket_system:
         self.T = thrust
         self.total_aero_center = aerocenter
         self.realTime = 0
+        self.Cd_para = 0
+        self.Cd_para_on = Cd_para_on
+        self.para_on_h = para_on_h
+
+        self.k = 0
 
         ''' Set initial variables'''
         self.mass = mass_pro+mass_struct                                ## 총 무게
@@ -68,15 +76,40 @@ class Rocket_system:
 
         ## free fall
         else :
-            if round(self.realTime,5) == 3.5:
+            if round(self.realTime,5) == self.t_b:
                 print('---Finish Burnning---')
 
             if self.params[-1][5] <= 0:             ## 착륙 완료
-                self.params[:] = np.array([0,0,0,self.params[-1][3],self.params[-1][4],0,self.params[-1][6],self.params[-1][7],self.params[-1][8],self.params[-1][9],0,0,0])
-                self.accel=np.array([0,0,0])
+                print('---Finisth Flight---')
 
-            else :                                  ## 착륙 x
-                self.params = Differentail_equation(self).end_of_burnning()                 ## 자유 낙하 미분 방정식
+            else :
+                if self.params[-1][2]<0 and self.params[-1][5] < self.para_on_h :
+                    self.Cd_para = self.Cd_para_on
+                    # self.T = [0,0,0]
+                    # self.T = [0,0,9.23*(9.81-0.7*self.params[-1][2]-0.28*self.params[-1][5])-0.5*1.225*self.params[-1][2]*self.params[-1][2]*np.pi*self.diameter*self.diameter/4*0.6 ]
+                    # self.T = [(-0.14*self.params[-1][11]+0.35*self.params[-1][9]-0.17*self.params[-1][0]+0.06*(self.params[-1][3])-0.5*1.225*self.params[-1][0]*self.params[-1][0]*np.pi*self.diameter*self.diameter/4*0.6),0,9.23*(9.81-0.85*self.params[-1][2]+0.15*(50-self.params[-1][5]))-0.5*1.225*self.params[-1][2]*self.params[-1][2]*np.pi*self.diameter*self.diameter/4*0.6 ]
+                    Ki = 0.35
+                    Kp = 0.09
+                    z = self.params[-1][5]
+                    vz = self.params[-1][2]
+                    x = self.params[-1][3]
+                    vx = self.params[-1][0]
+                    theta2 = np.arctan((Ki*vx+Kp*x)/(15*9.81-Ki*vz-Kp*z))
+                    T = (15*9.81-Ki*vz-Kp*z)/np.cos(theta2)
+                    # self.T = [-0.2*self.params[-1][11]+0.35*self.params[-1][9]+T*np.sin(theta2),0,3*T*np.cos(theta2)]
+                    self.T = [+T*np.sin(theta2)-0.35*self.params[-1][11]+0.09*self.params[-1][9],0,T*np.cos(theta2)]
+                    if self.T[2] <= 0:
+                        self.T[2] = 0
+                    if self.T[1] <= 0:
+                        self.T[1] = 0
+                    # if self.params[-1][5] < 65 :
+                    #     self.Cd_para = 1.2
+                    #     self.T = [0,0,0]
+                    print(self.T)
+                    self.params = Differentail_equation(self).in_burnning(self.motor_angle)                                  ## 착륙 x
+                else :
+                    self.T = [0,0,0]
+                    self.params = Differentail_equation(self).in_burnning(self.motor_angle)                 ## 자유 낙하 미분 방정식
 
 
     def readTvc(self,msg):
