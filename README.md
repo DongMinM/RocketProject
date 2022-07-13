@@ -1,1 +1,1 @@
-RocketProject
+Rocket Simulator
